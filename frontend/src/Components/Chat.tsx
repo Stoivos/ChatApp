@@ -31,10 +31,12 @@ const Chat = () => {
                     .build();
 
                 newConnection.on("ReceiveMessage", (user: string, message: string) => {
-                    setMessages((prev) => [
-                        ...prev,
-                        { user, message }
-                    ]);
+                    setMessages((prev) => {
+                        const updated = [...prev, { user, message }];
+
+                        // limit to last 50 messages in memory
+                        return updated.slice(-50);
+                    });
                 });
 
                 // Handle username received from server
