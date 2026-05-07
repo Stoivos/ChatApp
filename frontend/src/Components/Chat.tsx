@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
+import "./Chat.css";
 
 const Chat = () => {
 
@@ -80,20 +81,21 @@ const Chat = () => {
     };
 
     return (
+        <div className="chat-container">
 
-        <div>
+            <h2 className="chat-title">Chat Room</h2>
 
-            <h2>Chat Room</h2>
+            {error && <div className="chat-error">{error}</div>}
 
-            {error && <div style={{ color: 'red' }}>{error}</div>}
+            {!isConnected && (
+                <div className="chat-status">Connecting...</div>
+            )}
 
-            {!isConnected && <div>Connecting...</div>}
-
-            <div>
+            <div className="chat-box">
 
                 {messages.map((msg, index) => (
 
-                    <div key={index}>
+                    <div key={index} className="chat-message">
 
                         <strong>{msg.user}:</strong> {msg.message}
 
@@ -102,20 +104,30 @@ const Chat = () => {
 
             </div>
 
-            <input
-                type="text"
-                placeholder="Write message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                disabled={!isConnected}
-            />
+            <div className="chat-input-row">
 
-            <button onClick={sendMessage} disabled={!isConnected}>
-                Send
-            </button>
+                <input
+                    className="chat-input"
+                    type="text"
+                    placeholder="Write message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    disabled={!isConnected}
+                />
+
+                <button
+                    className="chat-button"
+                    onClick={sendMessage}
+                    disabled={!isConnected}
+                >
+                    Send
+                </button>
+
+            </div>
 
         </div>
     );
 };
+    
 
 export default Chat;

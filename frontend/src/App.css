@@ -1,4 +1,10 @@
 /* CSS Variables for theming */
+
+body {
+    background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+    color: var(--text-primary);
+}
+
 :root {
   --bg-gradient-start: #1a1a2e;
   --bg-gradient-end: #16213e;

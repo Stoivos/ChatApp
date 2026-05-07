@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./login.css";
 
 const Login = () => {
 
@@ -17,21 +18,25 @@ const Login = () => {
     };
 
     return (
+        <div className="login-container">
 
-        <div>
+            <div className="login-box">
 
-            <h2>Join Chat</h2>
+                <h2 className="login-title">Join Chat</h2>
 
-            <input
-                type="text"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
+                <input
+                    className="login-input"
+                    type="text"
+                    placeholder="Enter username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                />
 
-            <button onClick={joinChat}>
-                Join Room
-            </button>
+                <button className="login-button" onClick={joinChat}>
+                    Join Room
+                </button>
+
+            </div>
 
         </div>
     );
