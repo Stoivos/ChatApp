@@ -61,7 +61,7 @@ public class ChatHub : Hub
         if (!UserRoles.TryGetValue(Context.ConnectionId, out var role))
             return;
 
-        if (role != "Teacher")
+        if (role != "teacher")
             return;
 
         await Clients.All.SendAsync("ReceiveAnnouncement", "Teacher", message);

@@ -5,71 +5,102 @@ import "./Chat.css";
 const Chat = () => {
 
     const [message, setMessage] = useState("");
+    const [announcement, setAnnouncement] = useState("");
+
     const [messages, setMessages] = useState<
         { user: string; message: string }[]
-        >([]);
+    >([]);
+
     const [announcements, setAnnouncements] = useState<
         { user: string; message: string }[]
     >([]);
+
     const [username, setUsername] = useState<string>("");
-    const [role, setRole] = useState<string>("");
-    const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
+    const [role, setRole] = useState<string>("user");
+
+    const [connection, setConnection] =
+        useState<signalR.HubConnection | null>(null);
+
     const [isConnected, setIsConnected] = useState(false);
+
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+
+        let conn: signalR.HubConnection;
+
         const initConnection = async () => {
+
             try {
-                // Get username from session storage 
-                const storedUsername = sessionStorage.getItem("username");
+
+                const storedUsername =
+                    sessionStorage.getItem("username");
+
+                const storedRole =
+                    sessionStorage.getItem("role") ?? "user";
+
                 if (!storedUsername) {
-                    setError("Username not found. Please login first.");
+                    setError("Username not found");
                     return;
                 }
-                setUsername(storedUsername);
 
-                // Create SignalR connection
-                const newConnection = new signalR.HubConnectionBuilder()
-                    .withUrl(`/chatHub?Username=${storedUsername}`)
+                setUsername(storedUsername);
+                setRole(storedRole);
+
+                conn = new signalR.HubConnectionBuilder()
+                    .withUrl(`/chatHub?username=${storedUsername}`)
                     .withAutomaticReconnect()
                     .build();
 
-                newConnection.on("ReceiveMessage", (user: string, message: string) => {
-                    setMessages((prev) => {
-                        const updated = [...prev, { user, message }];
-                        // limit to last 50 messages in memory
-                        return updated.slice(-50);
+                conn.on("ReceiveMessage",
+                    (user: string, message: string) => {
+
+                        setMessages((prev) => {
+
+                            const updated = [
+                                ...prev,
+                                { user, message }
+                            ];
+
+                            return updated.slice(-50);
+                        });
                     });
-                });
 
-                newConnection.on("ReceiveAnnouncement", (user: string, message: string) => {
-                    setAnnouncements((prev) => [
-                        ...prev,
-                        { user, message }
-                    ]);
-                });
+                conn.on("ReceiveAnnouncement",
+                    (user: string, message: string) => {
 
-                // Handle username received from server
-                newConnection.on("ReceiveUsername", (serverUsername: string) => {
-                    setUsername(serverUsername);
-                });
+                        setAnnouncements((prev) => {
 
-                //Handle user role received from server
-                newConnection.on("ReceiveUserRole", (role: string) => {
-                    setRole(role);
-                });
+                            const updated = [
+                                ...prev,
+                                { user, message }
+                            ];
 
-                await newConnection.start();
-                setConnection(newConnection);
+                            return updated.slice(-20);
+                        });
+                    });
+
+                conn.on("ReceiveUserRole",
+                    (serverRole: string) => {
+
+                        setRole(serverRole);
+                    });
+
+                await conn.start();
+
+                await conn.invoke(
+                    "Join",
+                    storedUsername,
+                    storedRole
+                );
+
+                setConnection(conn);
                 setIsConnected(true);
 
-                const storedRole = sessionStorage.getItem("role");
-                // Join the chat room with username and role
-                await newConnection.invoke("Join", storedUsername, storedRole);
-
             } catch (err) {
-                setError("Failed to connect to chat server");
-                console.error("Connection error:", err);
+
+                console.error(err);
+                setError("Failed to connect");
             }
         };
 
@@ -77,11 +108,13 @@ const Chat = () => {
 
         return () => {
 
-            if (!connection) return;
+            if (!conn) return;
 
-            connection.off("ReceiveMessage");
-            connection.off("ReceiveUsername");
-            connection.off("ReceiveAnnouncement");
+            conn.off("ReceiveMessage");
+            conn.off("ReceiveAnnouncement");
+            conn.off("ReceiveUserRole");
+
+            conn.stop();
         };
 
     }, []);
@@ -91,66 +124,160 @@ const Chat = () => {
         if (!message.trim() || !connection) return;
 
         try {
-            
-            await connection.invoke("SendMessage", username, message);
+
+            await connection.invoke(
+                "SendMessage",
+                username,
+                message
+            );
 
             setMessage("");
 
         } catch (err) {
 
             console.error(err);
-            setError("Failed to send message");
+        }
+    };
+
+    const sendAnnouncement = async () => {
+
+        if (!announcement.trim() || !connection)
+            return;
+
+        try {
+
+            await connection.invoke(
+                "SendAnnouncement",
+                announcement
+            );
+
+            setAnnouncement("");
+
+        } catch (err) {
+
+            console.error(err);
         }
     };
 
     return (
-        <div className="chat-container">
 
-            <h2 className="chat-title">Chat Room</h2>
+        <div className="chat-layout">
 
-            {error && <div className="chat-error">{error}</div>}
+             {/*CHAT */}
 
-            {!isConnected && (
-                <div className="chat-status">Connecting...</div>
-            )}
+            <div className="chat-container">
 
-            <div className="chat-box">
+                <h2 className="chat-title">
+                    Chat Room
+                </h2>
 
-                {messages.map((msg, index) => (
-
-                    <div key={index} className="chat-message">
-
-                        <strong>{msg.user}:</strong> {msg.message}
-
+                {error && (
+                    <div className="chat-error">
+                        {error}
                     </div>
-                ))}
+                )}
+
+                {!isConnected && (
+                    <div className="chat-status">
+                        Connecting...
+                    </div>
+                )}
+
+                <div className="chat-box">
+
+                    {messages.map((msg, index) => (
+
+                        <div
+                            key={index}
+                            className="chat-message"
+                        >
+
+                            <strong>{msg.user}:</strong>
+                            {msg.message}
+
+                        </div>
+                    ))}
+
+                </div>
+
+                <div className="chat-input-row">
+
+                    <input
+                        className="chat-input"
+                        type="text"
+                        placeholder="Write message"
+                        value={message}
+                        onChange={(e) =>
+                            setMessage(e.target.value)
+                        }
+                        disabled={!isConnected}
+                    />
+
+                    <button
+                        className="chat-button"
+                        onClick={sendMessage}
+                        disabled={!isConnected}
+                    >
+                        Send
+                    </button>
+
+                </div>
 
             </div>
 
-            <div className="chat-input-row">
+             {/*ANNOUNCEMENTS */}
 
-                <input
-                    className="chat-input"
-                    type="text"
-                    placeholder="Write message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    disabled={!isConnected}
-                />
+            <div className="announcement-container">
 
-                <button
-                    className="chat-button"
-                    onClick={sendMessage}
-                    disabled={!isConnected}
-                >
-                    Send
-                </button>
+                <h2 className="chat-title">
+                    Announcements
+                </h2>
+
+                <div className="chat-box">
+
+                    {announcements.map((msg, index) => (
+
+                        <div
+                            key={index}
+                            className="chat-message"
+                        >
+
+                            <strong>{msg.user}:</strong>
+                            {msg.message}
+
+                        </div>
+                    ))}
+
+                </div>
+
+                {role === "teacher" && (
+
+                    <div className="chat-input-row">
+
+                        <input
+                            className="chat-input"
+                            type="text"
+                            placeholder="Write announcement"
+                            value={announcement}
+                            onChange={(e) =>
+                                setAnnouncement(e.target.value)
+                            }
+                        />
+
+                        <button
+                            className="chat-button"
+                            onClick={sendAnnouncement}
+                        >
+                            Post
+                        </button>
+
+                    </div>
+                )}
 
             </div>
 
         </div>
     );
 };
-    
 
 export default Chat;
