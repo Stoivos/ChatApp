@@ -11,6 +11,17 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddSignalR();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:51535")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -20,6 +31,13 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+
+app.UseRouting();
+
+app.UseCors("CorsPolicy");
+
+app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chatHub");
 
