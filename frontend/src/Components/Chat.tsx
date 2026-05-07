@@ -7,8 +7,12 @@ const Chat = () => {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState<
         { user: string; message: string }[]
+        >([]);
+    const [announcements, setAnnouncements] = useState<
+        { user: string; message: string }[]
     >([]);
     const [username, setUsername] = useState<string>("");
+    const [role, setRole] = useState<string>("");
     const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -33,10 +37,16 @@ const Chat = () => {
                 newConnection.on("ReceiveMessage", (user: string, message: string) => {
                     setMessages((prev) => {
                         const updated = [...prev, { user, message }];
-
                         // limit to last 50 messages in memory
                         return updated.slice(-50);
                     });
+                });
+
+                newConnection.on("ReceiveAnnouncement", (user: string, message: string) => {
+                    setAnnouncements((prev) => [
+                        ...prev,
+                        { user, message }
+                    ]);
                 });
 
                 // Handle username received from server
@@ -44,9 +54,19 @@ const Chat = () => {
                     setUsername(serverUsername);
                 });
 
+                //Handle user role received from server
+                newConnection.on("ReceiveUserRole", (role: string) => {
+                    setRole(role);
+                });
+
                 await newConnection.start();
                 setConnection(newConnection);
                 setIsConnected(true);
+
+                const storedRole = sessionStorage.getItem("role");
+                // Join the chat room with username and role
+                await newConnection.invoke("Join", storedUsername, storedRole);
+
             } catch (err) {
                 setError("Failed to connect to chat server");
                 console.error("Connection error:", err);
@@ -61,6 +81,7 @@ const Chat = () => {
 
             connection.off("ReceiveMessage");
             connection.off("ReceiveUsername");
+            connection.off("ReceiveAnnouncement");
         };
 
     }, []);
@@ -70,7 +91,7 @@ const Chat = () => {
         if (!message.trim() || !connection) return;
 
         try {
-
+            
             await connection.invoke("SendMessage", username, message);
 
             setMessage("");

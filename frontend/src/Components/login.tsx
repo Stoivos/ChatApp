@@ -5,15 +5,16 @@ import "./login.css";
 const Login = () => {
 
     const [username, setUsername] = useState("");
+    const [role, setRole] = useState("student");
     const navigate = useNavigate();
 
-    // Redirect user to chat page after entering username
-    const joinChat = async () => {
+    const joinChat = () => {
 
         if (!username.trim()) return;
 
-        // Store username in session storage and navigate to chat
         sessionStorage.setItem("username", username);
+        sessionStorage.setItem("role", role);
+
         navigate("/chat");
     };
 
@@ -31,6 +32,15 @@ const Login = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                 />
+
+                <select
+                    className="login-input"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                >
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                </select>
 
                 <button className="login-button" onClick={joinChat}>
                     Join Room
