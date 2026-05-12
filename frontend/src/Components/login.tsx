@@ -8,6 +8,7 @@ const Login = () => {
     const [role, setRole] = useState("student");
     const navigate = useNavigate();
 
+    // function to store username and role in session and navigate to chat page
     const joinChat = () => {
 
         if (!username.trim()) return;
@@ -33,6 +34,7 @@ const Login = () => {
                     onChange={(e) => setUsername(e.target.value)}
                 />
 
+                {/*dropdown for role selection*/}
                 <select
                     className="login-input"
                     value={role}

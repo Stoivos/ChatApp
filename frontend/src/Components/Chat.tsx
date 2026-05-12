@@ -4,16 +4,15 @@ import "./Chat.css";
 
 const Chat = () => {
 
+    // use states to manage variables
     const [message, setMessage] = useState("");
     const [announcement, setAnnouncement] = useState("");
 
-    const [messages, setMessages] = useState<
-        { user: string; message: string }[]
-    >([]);
+    type userType = { user: string; message: string }[];
+    const [messages, setMessages] = useState<userType>([]);
 
-    const [announcements, setAnnouncements] = useState<
-        { user: string; message: string }[]
-    >([]);
+    type announcementType = { user: string; message: string }[];
+    const [announcements, setAnnouncements] = useState<announcementType>([]);
 
     const [username, setUsername] = useState<string>("");
     const [role, setRole] = useState<string>("user");
@@ -29,6 +28,7 @@ const Chat = () => {
 
         let conn: signalR.HubConnection;
 
+        // function to initialize connection and set up listeners
         const initConnection = async () => {
 
             try {
@@ -46,6 +46,7 @@ const Chat = () => {
 
                 setUsername(storedUsername);
                 setRole(storedRole);
+
 
                 conn = new signalR.HubConnectionBuilder()
                     .withUrl(`/chatHub?username=${storedUsername}`)
@@ -104,6 +105,7 @@ const Chat = () => {
             }
         };
 
+        // call the function to initialize connection
         initConnection();
 
         return () => {
@@ -119,6 +121,7 @@ const Chat = () => {
 
     }, []);
 
+    // function to send message to the server
     const sendMessage = async () => {
 
         if (!message.trim() || !connection) return;
@@ -139,6 +142,7 @@ const Chat = () => {
         }
     };
 
+    // function to send announcement to the server
     const sendAnnouncement = async () => {
 
         if (!announcement.trim() || !connection)
@@ -160,6 +164,7 @@ const Chat = () => {
     };
 
     return (
+        //layout for chat and announcements
 
         <div className="chat-layout">
 
@@ -250,6 +255,7 @@ const Chat = () => {
 
                 </div>
 
+                {/*only show announcement input for teachers*/}
                 {role === "teacher" && (
 
                     <div className="chat-input-row">
